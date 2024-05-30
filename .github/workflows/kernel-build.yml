@@ -1,0 +1,31 @@
+name: src
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Build kernel on OpenBSD
+#    env:
+#      MYTOKEN : ${{ secrets.MYTOKEN }}
+#      MYTOKEN2: "value2"
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      id: test
+      uses: vmactions/openbsd-vm@v1
+      with:
+#        envs: 'MYTOKEN MYTOKEN2'
+        usesh: true
+        prepare: |
+          pkg_add rust rust-src llvm%17
+          export PATH=$HOME/.cargo/bin:$PATH
+          cargo install bindgen-cli
+          cd ./work/src/src
+          rsync -av ./ /usr/src
+        run: |
+          export PATH=$HOME/.cargo/bin:$PATH
+          cd /usr/src/sys/arch/arm64/conf
+          config CUSTOM.MP
+          cd /usr/src/sys/arch/arm64/compile/CUSTOM.MP
+          make -j4
